@@ -1,0 +1,136 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String    @id
+  email        String    @unique
+  passwordHash String    @map("password_hash")
+  fullName     String    @map("full_name")
+  createdAt    DateTime  @default(now()) @map("created_at")
+}
+
+model Organization {
+  id        String    @id
+  name      String
+  createdAt DateTime  @default(now()) @map("created_at")
+  projects  Project[]
+}
+
+model Project {
+  id        String    @id
+  orgId     String    @map("org_id")
+  name      String
+  createdAt DateTime  @default(now()) @map("created_at")
+  organization Organization @relation(fields: [orgId], references: [id])
+  queues    Queue[]
+}
+
+model RetryPolicy {
+  id          String  @id
+  type        String
+  baseDelayMs Int     @map("base_delay_ms")
+  maxRetries  Int     @map("max_retries")
+  queues      Queue[]
+}
+
+model Queue {
+  id             String       @id
+  projectId      String       @map("project_id")
+  name           String
+  priority       Int
+  concurrencyLimit Int        @map("concurrency_limit")
+  isPaused       Boolean      @default(false) @map("is_paused")
+  retryPolicyId  String?      @map("retry_policy_id")
+  createdAt      DateTime     @default(now()) @map("created_at")
+  project        Project      @relation(fields: [projectId], references: [id])
+  retryPolicy    RetryPolicy? @relation(fields: [retryPolicyId], references: [id])
+  jobs           Job[]
+  schedules      Schedule[]
+}
+
+model Job {
+  id          Int          @id @default(autoincrement())
+  queueId     String       @map("queue_id")
+  type        String
+  payload     Json
+  status      String
+  priority    String
+  attempt     Int          @default(0)
+  maxAttempts Int          @default(3) @map("max_attempts")
+  runAt       DateTime     @default(now()) @map("run_at")
+  cronExpr    String?      @map("cron_expr")
+  batchId     String?      @map("batch_id")
+  claimedBy   String?      @map("claimed_by")
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @default(now()) @map("updated_at")
+  queue       Queue        @relation(fields: [queueId], references: [id])
+  executions  JobExecution[]
+  logs        JobLog[]
+  deadLetters DeadLetter[]
+}
+
+model JobExecution {
+  id            String    @id
+  jobId         Int       @map("job_id")
+  workerId      String?   @map("worker_id")
+  startedAt     DateTime  @default(now()) @map("started_at")
+  finishedAt    DateTime? @map("finished_at")
+  status        String
+  resultPayload Json?     @map("result_payload")
+  errorMessage  String?   @map("error_message")
+  job           Job       @relation(fields: [jobId], references: [id])
+  logs          JobLog[]  @relation("ExecutionLogs")
+}
+
+model JobLog {
+  id          Int          @id @default(autoincrement())
+  jobId       Int          @map("job_id")
+  executionId String?      @map("execution_id")
+  level       String
+  message     String
+  createdAt   DateTime     @default(now()) @map("created_at")
+  job         Job          @relation(fields: [jobId], references: [id])
+  execution   JobExecution? @relation("ExecutionLogs", fields: [executionId], references: [id])
+}
+
+model Worker {
+  id              String   @id
+  name            String
+  status          String
+  lastHeartbeatAt DateTime @default(now()) @map("last_heartbeat_at")
+  currentJobId    Int?     @map("current_job_id")
+  cpuUsage        Int      @default(0) @map("cpu_usage")
+  memoryUsage     Int      @default(0) @map("memory_usage")
+  hostname        String
+  version         String   @default("1.0.0")
+  uptime          String   @default("2d 4h 23m")
+}
+
+model DeadLetter {
+  id         Int      @id @default(autoincrement())
+  jobId      Int      @map("job_id")
+  queueId    String   @map("queue_id")
+  type       String
+  failedPayload Json   @map("failed_payload")
+  reason     String
+  failedAt   DateTime @default(now()) @map("failed_at")
+  attempts   Int
+  job        Job      @relation(fields: [jobId], references: [id])
+}
+
+model Schedule {
+  id       String   @id
+  name     String
+  queueId  String   @map("queue_id")
+  cronExpr String   @map("cron_expr")
+  nextRun  DateTime @map("next_run")
+  status   String
+  createdAt DateTime @default(now()) @map("created_at")
+  queue    Queue    @relation(fields: [queueId], references: [id])
+}
