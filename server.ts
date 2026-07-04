@@ -26,7 +26,7 @@ const isProductionLike = process.env.NODE_ENV === 'production' ||
   Boolean(process.env.RAILWAY_PUBLIC_DOMAIN) ||
   Boolean(process.env.RAILWAY_LB_HOST) ||
   Boolean(process.env.PORT);
-const shouldUseVite = !hasBuiltAssets && !isProductionLike;
+const shouldUseVite = !hasBuiltAssets && !isProductionLike && !process.argv.includes('--prod');
 console.log(`[server] serving from ${distPath}, hasBuiltAssets: ${hasBuiltAssets}, production-like: ${isProductionLike}, shouldUseVite: ${shouldUseVite}`);
 
 app.use(express.json());
