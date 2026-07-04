@@ -145,17 +145,14 @@ app.post('/api/auth/sign-up', async (req, res) => {
   }
 });
 
-app.get('/api/auth/me', async (req, res) => {
-  const userId = getUserId(req);
-  try {
-    const users = await sql`SELECT id, email, full_name FROM users WHERE id = ${userId}`;
-    if (users.length === 0) {
-      return res.status(404).json({ error: { code: 'NOT_FOUND', message: 'User not found.' } });
-    }
-    res.json({ user: users[0] });
-  } catch (err: any) {
-    res.status(500).json({ error: { code: 'SERVER_ERROR', message: err.message } });
-  }
+app.get('/api/auth/me', (req, res) => {
+  res.json({
+    user: {
+      id: 'user_demo',
+      email: 'demo@example.com',
+      fullName: 'Demo User',
+    },
+  });
 });
 
 // ==========================================
