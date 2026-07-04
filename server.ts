@@ -21,8 +21,10 @@ const isProductionLike = process.env.NODE_ENV === 'production' ||
   Boolean(process.env.RAILWAY_PROJECT_ID) ||
   Boolean(process.env.RAILWAY_STATIC_URL) ||
   Boolean(process.env.RAILWAY_PUBLIC_DOMAIN) ||
-  Boolean(process.env.RAILWAY_LB_HOST);
+  Boolean(process.env.RAILWAY_LB_HOST) ||
+  Boolean(process.env.PORT);
 const shouldUseVite = !hasBuiltAssets && !isProductionLike;
+console.log(`[server] dist assets present: ${hasBuiltAssets}, production-like: ${isProductionLike}, shouldUseVite: ${shouldUseVite}`);
 
 app.use(express.json());
 
@@ -1142,6 +1144,13 @@ async function startServer() {
     app.use(vite.middlewares);
     console.log('Vite development server middleware loaded.');
   } else {
+    app.use((req, res, next) => {
+      if (hasBuiltAssets && (req.path.startsWith('/@vite') || req.path.startsWith('/src/') || req.path.includes('/@fs/'))) {
+        console.warn(`Blocked dev-only request in production: ${req.path}`);
+        return res.status(404).send('Not found');
+      }
+      next();
+    });
     app.use(express.static(distPath));
     app.get('*', (req, res) => {
       res.sendFile(path.join(distPath, 'index.html'));
