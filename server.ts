@@ -14,10 +14,12 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = Number(process.env.PORT ?? 3000);
-const rootDir = path.resolve(__dirname);
-const distPath = existsSync(path.join(rootDir, 'dist', 'index.html')) && existsSync(path.join(rootDir, 'dist', 'assets'))
-  ? path.join(rootDir, 'dist')
-  : rootDir;
+const rootDistPath = path.join(__dirname, 'dist');
+const distPath = existsSync(path.join(__dirname, 'index.html')) && existsSync(path.join(__dirname, 'assets'))
+  ? __dirname
+  : existsSync(path.join(rootDistPath, 'index.html')) && existsSync(path.join(rootDistPath, 'assets'))
+    ? rootDistPath
+    : __dirname;
 const hasBuiltAssets = existsSync(path.join(distPath, 'index.html')) && existsSync(path.join(distPath, 'assets'));
 const isProductionLike = process.env.NODE_ENV === 'production' ||
   Boolean(process.env.RAILWAY_ENVIRONMENT_NAME) ||
@@ -27,6 +29,11 @@ const isProductionLike = process.env.NODE_ENV === 'production' ||
   Boolean(process.env.RAILWAY_LB_HOST) ||
   Boolean(process.env.PORT);
 const shouldUseVite = !hasBuiltAssets && !isProductionLike && !process.argv.includes('--prod');
+console.log(`__dirname = ${__dirname}`);
+console.log(`distPath = ${distPath}`);
+console.log(`dist exists: ${existsSync(path.join(__dirname, 'dist'))}`);
+console.log(`dist/index exists: ${existsSync(path.join(__dirname, 'dist', 'index.html'))}`);
+console.log(`root index exists: ${existsSync(path.join(__dirname, 'index.html'))}`);
 console.log(`[server] serving from ${distPath}, hasBuiltAssets: ${hasBuiltAssets}, production-like: ${isProductionLike}, shouldUseVite: ${shouldUseVite}`);
 
 app.use(express.json());
