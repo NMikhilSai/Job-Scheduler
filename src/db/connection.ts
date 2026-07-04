@@ -3,9 +3,11 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-const DEFAULT_DB_URL = "postgresql://postgres.xjepohumtnltyeuepyki:1%40Srivani123@aws-1-ap-south-1.pooler.supabase.com:6543/postgres?sslmode=require&pgbouncer=true";
+const connectionString = process.env.DATABASE_URL;
 
-const connectionString = process.env.DATABASE_URL || DEFAULT_DB_URL;
+if (!connectionString) {
+  throw new Error('DATABASE_URL is not set');
+}
 
 // Disable prepare statements for compatibility with pgbouncer transaction mode
 export const sql = postgres(connectionString, {
@@ -15,3 +17,12 @@ export const sql = postgres(connectionString, {
   idle_timeout: 20,
   connect_timeout: 10,
 });
+
+(async () => {
+  try {
+    const result = await sql`SELECT NOW()`;
+    console.log('✅ Database connected:', result);
+  } catch (err) {
+    console.error('❌ Database connection failed:', err);
+  }
+})();
