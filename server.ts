@@ -14,19 +14,15 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = Number(process.env.PORT ?? 3000);
-const invokedEntry = process.argv[1]?.replace(/\\/g, '/');
 const distPath = path.resolve(__dirname);
 const hasBuiltAssets = existsSync(path.join(distPath, 'index.html'));
-const isBundledServer = /(^|\/)(dist\/)?server\.(mjs|js)$/.test(invokedEntry ?? '');
-const isProduction = process.env.NODE_ENV === 'production' ||
-  process.env.npm_lifecycle_event === 'start' ||
+const isProductionLike = process.env.NODE_ENV === 'production' ||
   Boolean(process.env.RAILWAY_ENVIRONMENT_NAME) ||
   Boolean(process.env.RAILWAY_PROJECT_ID) ||
   Boolean(process.env.RAILWAY_STATIC_URL) ||
   Boolean(process.env.RAILWAY_PUBLIC_DOMAIN) ||
-  Boolean(process.env.RAILWAY_LB_HOST) ||
-  isBundledServer ||
-  hasBuiltAssets;
+  Boolean(process.env.RAILWAY_LB_HOST);
+const shouldUseVite = !hasBuiltAssets && !isProductionLike;
 
 app.use(express.json());
 
@@ -1137,7 +1133,7 @@ setInterval(async () => {
 // ==========================================
 
 async function startServer() {
-  if (!isProduction && !hasBuiltAssets) {
+  if (shouldUseVite) {
     const { createServer: createViteServer } = await import('vite');
     const vite = await createViteServer({
       server: { middlewareMode: true },
