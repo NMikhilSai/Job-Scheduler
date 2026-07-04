@@ -13,7 +13,10 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = Number(process.env.PORT ?? 3000);
-const isProduction = process.env.NODE_ENV === 'production';
+const isProduction = process.env.NODE_ENV === 'production' ||
+  Boolean(process.env.RAILWAY_ENVIRONMENT_NAME) ||
+  Boolean(process.env.RAILWAY_PROJECT_ID) ||
+  Boolean(process.env.RAILWAY_STATIC_URL);
 
 app.use(express.json());
 
