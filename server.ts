@@ -1,5 +1,6 @@
 import express from 'express';
 import path from 'path';
+import { existsSync } from 'fs';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 import { sql } from './src/db/connection.js';
@@ -14,6 +15,8 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = Number(process.env.PORT ?? 3000);
 const invokedEntry = process.argv[1]?.replace(/\\/g, '/');
+const distPath = path.join(process.cwd(), 'dist');
+const hasBuiltAssets = existsSync(path.join(distPath, 'index.html'));
 const isProduction = process.env.NODE_ENV === 'production' ||
   process.env.npm_lifecycle_event === 'start' ||
   Boolean(process.env.RAILWAY_ENVIRONMENT_NAME) ||
@@ -22,7 +25,8 @@ const isProduction = process.env.NODE_ENV === 'production' ||
   Boolean(process.env.RAILWAY_PUBLIC_DOMAIN) ||
   Boolean(process.env.RAILWAY_LB_HOST) ||
   invokedEntry?.endsWith('/dist/server.mjs') ||
-  invokedEntry?.endsWith('/dist/server.js');
+  invokedEntry?.endsWith('/dist/server.js') ||
+  hasBuiltAssets;
 
 app.use(express.json());
 
@@ -1133,7 +1137,7 @@ setInterval(async () => {
 // ==========================================
 
 async function startServer() {
-  if (!isProduction) {
+  if (!isProduction && !hasBuiltAssets) {
     const { createServer: createViteServer } = await import('vite');
     const vite = await createViteServer({
       server: { middlewareMode: true },
@@ -1142,7 +1146,6 @@ async function startServer() {
     app.use(vite.middlewares);
     console.log('Vite development server middleware loaded.');
   } else {
-    const distPath = path.join(process.cwd(), 'dist');
     app.use(express.static(distPath));
     app.get('*', (req, res) => {
       res.sendFile(path.join(distPath, 'index.html'));
