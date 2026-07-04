@@ -14,8 +14,11 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = Number(process.env.PORT ?? 3000);
-const distPath = path.resolve(__dirname);
-const hasBuiltAssets = existsSync(path.join(distPath, 'index.html'));
+const rootDir = path.resolve(__dirname);
+const distPath = existsSync(path.join(rootDir, 'dist', 'index.html')) && existsSync(path.join(rootDir, 'dist', 'assets'))
+  ? path.join(rootDir, 'dist')
+  : rootDir;
+const hasBuiltAssets = existsSync(path.join(distPath, 'index.html')) && existsSync(path.join(distPath, 'assets'));
 const isProductionLike = process.env.NODE_ENV === 'production' ||
   Boolean(process.env.RAILWAY_ENVIRONMENT_NAME) ||
   Boolean(process.env.RAILWAY_PROJECT_ID) ||
@@ -24,7 +27,7 @@ const isProductionLike = process.env.NODE_ENV === 'production' ||
   Boolean(process.env.RAILWAY_LB_HOST) ||
   Boolean(process.env.PORT);
 const shouldUseVite = !hasBuiltAssets && !isProductionLike;
-console.log(`[server] dist assets present: ${hasBuiltAssets}, production-like: ${isProductionLike}, shouldUseVite: ${shouldUseVite}`);
+console.log(`[server] serving from ${distPath}, hasBuiltAssets: ${hasBuiltAssets}, production-like: ${isProductionLike}, shouldUseVite: ${shouldUseVite}`);
 
 app.use(express.json());
 
@@ -1153,9 +1156,12 @@ async function startServer() {
     });
     app.use(express.static(distPath));
     app.get('*', (req, res) => {
+      if (req.path.startsWith('/@vite') || req.path.startsWith('/src/') || req.path.includes('/@fs/')) {
+        return res.status(404).send('Not found');
+      }
       res.sendFile(path.join(distPath, 'index.html'));
     });
-    console.log('Serving production static build from ./dist.');
+    console.log(`Serving production static build from ${distPath}.`);
   }
 
   app.listen(PORT, '0.0.0.0', () => {
