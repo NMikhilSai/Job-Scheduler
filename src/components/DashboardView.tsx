@@ -17,14 +17,23 @@ export default function DashboardView({ onNavigate, onTriggerEvent }: DashboardV
   const fetchDashboardData = async () => {
     try {
       const metricsRes = await fetch('/api/metrics/throughput');
+      if (!metricsRes.ok) {
+        throw new Error(`Metrics request failed with status ${metricsRes.status}`);
+      }
       const metricsData = await metricsRes.json();
       setMetrics(metricsData);
 
       const workersRes = await fetch('/api/workers');
+      if (!workersRes.ok) {
+        throw new Error(`Workers request failed with status ${workersRes.status}`);
+      }
       const workersData = await workersRes.json();
       setWorkers(workersData.data);
 
       const executionsRes = await fetch('/api/executions?pageSize=5');
+      if (!executionsRes.ok) {
+        throw new Error(`Executions request failed with status ${executionsRes.status}`);
+      }
       const executionsData = await executionsRes.json();
       setRecentExecutions(executionsData.data);
     } catch (e) {
