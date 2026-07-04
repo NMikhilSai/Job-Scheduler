@@ -15,6 +15,7 @@ const app = express();
 const PORT = Number(process.env.PORT ?? 3000);
 const invokedEntry = process.argv[1]?.replace(/\\/g, '/');
 const isProduction = process.env.NODE_ENV === 'production' ||
+  process.env.npm_lifecycle_event === 'start' ||
   Boolean(process.env.RAILWAY_ENVIRONMENT_NAME) ||
   Boolean(process.env.RAILWAY_PROJECT_ID) ||
   Boolean(process.env.RAILWAY_STATIC_URL) ||
