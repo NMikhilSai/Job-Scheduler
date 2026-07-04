@@ -4,6 +4,8 @@ import path from 'path';
 import { defineConfig } from 'vite';
 
 export default defineConfig(() => {
+  const isProductionLike = process.env.NODE_ENV === 'production' || Boolean(process.env.RAILWAY_PUBLIC_DOMAIN);
+
   return {
     plugins: [react(), tailwindcss()],
 
@@ -18,24 +20,20 @@ export default defineConfig(() => {
       host: '0.0.0.0',
 
       // Allow Railway domain and local dev
-      allowedHosts: [
-        'job-scheduler-production-a426.up.railway.app',
-        'localhost',
-        '127.0.0.1',
-      ],
+      allowedHosts: isProductionLike
+        ? ['.up.railway.app', 'localhost', '127.0.0.1']
+        : ['localhost', '127.0.0.1'],
 
       // Existing settings
-      hmr: process.env.DISABLE_HMR !== 'true' && process.env.NODE_ENV !== 'production',
-      watch: process.env.DISABLE_HMR === 'true' || process.env.NODE_ENV === 'production' ? null : {},
+      hmr: !isProductionLike && process.env.DISABLE_HMR !== 'true',
+      watch: !isProductionLike && process.env.DISABLE_HMR !== 'true' ? {} : null,
     },
 
     preview: {
       host: '0.0.0.0',
-      allowedHosts: [
-        'job-scheduler-production-a426.up.railway.app',
-        'localhost',
-        '127.0.0.1',
-      ],
+      allowedHosts: isProductionLike
+        ? ['.up.railway.app', 'localhost', '127.0.0.1']
+        : ['localhost', '127.0.0.1'],
     },
   };
 });
