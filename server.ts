@@ -1154,6 +1154,12 @@ async function startServer() {
       }
       next();
     });
+    app.use((req, res, next) => {
+      if (hasBuiltAssets && req.path === '/index.html') {
+        return res.sendFile(path.join(distPath, 'index.html'));
+      }
+      next();
+    });
     app.use(express.static(distPath));
     app.get('*', (req, res) => {
       if (req.path.startsWith('/@vite') || req.path.startsWith('/src/') || req.path.includes('/@fs/')) {
