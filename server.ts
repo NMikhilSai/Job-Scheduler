@@ -13,10 +13,15 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = Number(process.env.PORT ?? 3000);
+const invokedEntry = process.argv[1]?.replace(/\\/g, '/');
 const isProduction = process.env.NODE_ENV === 'production' ||
   Boolean(process.env.RAILWAY_ENVIRONMENT_NAME) ||
   Boolean(process.env.RAILWAY_PROJECT_ID) ||
-  Boolean(process.env.RAILWAY_STATIC_URL);
+  Boolean(process.env.RAILWAY_STATIC_URL) ||
+  Boolean(process.env.RAILWAY_PUBLIC_DOMAIN) ||
+  Boolean(process.env.RAILWAY_LB_HOST) ||
+  invokedEntry?.endsWith('/dist/server.mjs') ||
+  invokedEntry?.endsWith('/dist/server.js');
 
 app.use(express.json());
 
